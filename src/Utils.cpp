@@ -137,8 +137,9 @@ static void Qaterial_loadResources()
     loadFont(":/Qaterial/Fonts/Lato/");
     loadFont(":/Qaterial/Fonts/OpenSans/");
 
+    
     QQuickStyle::setStyle(QStringLiteral("Qaterial"));
-    QQuickStyle::setFallbackStyle(QStringLiteral("Material"));
+    QQuickStyle::setStyle(QStringLiteral("Universal"));
 }
 
 #ifndef QATERIAL_STATIC
