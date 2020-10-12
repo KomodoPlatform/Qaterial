@@ -24,7 +24,7 @@
 #include <QQuickStyle>
 
 #ifdef Q_OS_WIN
-#include <Windows.h>
+#    include <Windows.h>
 #endif
 
 // ─────────────────────────────────────────────────────────────
@@ -115,21 +115,14 @@ static void Qaterial_registerTypes(const char* uri, const quint8 major, const qu
     Qaterial_registerTypes();
 }
 
-static void Qaterial_loadResources(bool autoRegisterStyle = true)
+static void Qaterial_loadFonts()
 {
-    LOG_DEV_INFO("Load Qaterial v{}", qPrintable(qaterial::Version::version().readable()));
-
-    Q_INIT_RESOURCE(Qaterial);
-    Q_INIT_RESOURCE(QaterialFonts);
-    Q_INIT_RESOURCE(QaterialIcons);
-    Q_INIT_RESOURCE(QaterialIconsImpl);
-
     const auto loadFont = [](const QString& fontFolderPath)
     {
         const QDir dir(fontFolderPath);
         for(const auto& file: dir.entryList(QDir::Files))
         {
-            const auto fileUrl = fontFolderPath + file;
+            const auto fileUrl = fontFolderPath + "/" + file;
             if(QFontDatabase::addApplicationFont(fileUrl) >= 0)
                 LOG_INFO("Load font {}", fileUrl.toStdString());
             else
@@ -137,10 +130,30 @@ static void Qaterial_loadResources(bool autoRegisterStyle = true)
         }
     };
 
-    loadFont(":/Qaterial/Fonts/Roboto/");
-    loadFont(":/Qaterial/Fonts/Lato/");
-    loadFont(":/Qaterial/Fonts/OpenSans/");
+    const QDir fontsDirectory(":/Qaterial/Fonts");
+    for(const auto& fontDir: fontsDirectory.entryList(QDir::Dirs | QDir::NoDotAndDotDot))
+    {
+        const auto fontDirPath = fontsDirectory.path() + "/" + fontDir;
+        loadFont(fontDirPath);
+    }
+}
 
+static void Qaterial_loadResources(bool autoRegisterStyle = true)
+{
+    LOG_DEV_INFO("Load Qaterial v{}", qPrintable(qaterial::Version::version().readable()));
+
+    // Force load qrc resources
+    // This is mandatory when used as a static library
+    Q_INIT_RESOURCE(Qaterial);
+    Q_INIT_RESOURCE(QaterialFonts);
+    Q_INIT_RESOURCE(QaterialIcons);
+    Q_INIT_RESOURCE(QaterialIconsImpl);
+
+    // Load all fonts embedded in QaterialFonts
+    Qaterial_loadFonts();
+
+    // By default Qaterial is set as qt quick controls 2 style.
+    // It can be disabled for people not using Qaterial as Style, but just using some components.
     if(autoRegisterStyle)
     {
         QQuickStyle::setStyle(QStringLiteral("Qaterial"));
@@ -156,17 +169,11 @@ Q_COREAPP_STARTUP_FUNCTION(Qaterial_loadResources);
 
 using namespace qaterial;
 
-void Utils::registerTypes(const char* uri, const quint8 major, const quint8 minor)
-{
-    ::Qaterial_registerTypes(uri, major, minor);
-}
+void Utils::registerTypes(const char* uri, const quint8 major, const quint8 minor) { ::Qaterial_registerTypes(uri, major, minor); }
 
 void Utils::loadResources() { ::Qaterial_loadResources(); }
 
-void qaterial::registerQmlTypes(const char* uri, const quint8 major, const quint8 minor)
-{
-    ::Qaterial_registerTypes(uri, major, minor);
-}
+void qaterial::registerQmlTypes(const char* uri, const quint8 major, const quint8 minor) { ::Qaterial_registerTypes(uri, major, minor); }
 
 void qaterial::loadQmlResources(bool autoRegisterStyle) { ::Qaterial_loadResources(autoRegisterStyle); }
 
@@ -176,10 +183,10 @@ class HighDpiFix
     HighDpiFix()
     {
 #ifdef Q_OS_WIN
-    #if _WIN32_WINNT >= 0x0600
+#    if _WIN32_WINNT >= 0x0600
         ::SetProcessDPIAware();
-    #endif
-#endif  // Q_OS_WIN
+#    endif
+#endif // Q_OS_WIN
         QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     }
     static HighDpiFix singleton;
