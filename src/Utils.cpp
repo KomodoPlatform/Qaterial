@@ -159,7 +159,6 @@ static void Qaterial_loadResources(bool autoRegisterStyle = true)
         QQuickStyle::setStyle(QStringLiteral("Qaterial"));
         QQuickStyle::setFallbackStyle(QStringLiteral("Material"));
     }
-
 }
 
 #ifndef QATERIAL_STATIC
